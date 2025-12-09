@@ -392,6 +392,23 @@
 
     // variable global para el gráfico
     let chartReportes = null;
+    let chartReportes = null;
+    let chartSeveridad = null;
+
+    // Cuenta cuántos reportes caen en cada categoría (Baja / Media / Alta)
+    function contarCategorias(layerGroup, campo, categorias) {
+      const conteo = new Array(categorias.length).fill(0);
+      if (!layerGroup) return conteo;
+    
+      layerGroup.eachLayer(layer => {
+        const props = (layer.feature && layer.feature.properties) || {};
+        const valor = props[campo];
+        const idx = categorias.indexOf(valor);
+        if (idx !== -1) conteo[idx]++;
+      });
+    
+      return conteo;
+      }
 
     // llamada desde map.js cuando las capas comunitarias están cargadas
     function actualizarAnalisis() {
@@ -440,6 +457,65 @@
               beginAtZero: true,
               ticks: { precision: 0 }
             }
+           // -----------------------------
+          // Gráfico de intensidad / severidad
+          // -----------------------------
+          const categorias = ['Baja', 'Media', 'Alta'];
+          
+          // Cargar categorías desde los GeoJSON  
+          const conteoFocos = contarCategorias(
+              focosComunidadLayer,
+              'Intensidad aparente',
+              categorias
+          );
+          
+          const conteoExt = contarCategorias(
+              poligonosComunidadLayer,
+              'Severidad aparente',
+              categorias
+          );
+          
+          const canvasSev = document.getElementById("grafico-severidad");
+          if (!canvasSev) return;
+          
+          const ctxSev = canvasSev.getContext("2d");
+          
+          // destruir si ya existe
+          if (chartSeveridad) {
+              chartSeveridad.destroy();
+          }
+          
+          chartSeveridad = new Chart(ctxSev, {
+              type: 'bar',
+              data: {
+                  labels: categorias,
+                  datasets: [
+                      {
+                          label: 'Focos (intensidad)',
+                          data: conteoFocos,
+                          backgroundColor: 'rgba(227, 26, 28, 0.7)'
+                      },
+                      {
+                          label: 'Extensión (severidad)',
+                          data: conteoExt,
+                          backgroundColor: 'rgba(255, 127, 0, 0.7)'
+                      }
+                  ]
+              },
+              options: {
+                  responsive: false,
+                  plugins: {
+                      legend: { position: 'bottom' }
+                  },
+                  scales: {
+                      y: {
+                          beginAtZero: true,
+                          ticks: { precision: 0 }
+                      }
+                  }
+              }
+          });
+ 
           }
         }
       });
@@ -447,6 +523,7 @@
   </script>
 </body>
 </html>
+
 
 
 
