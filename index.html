@@ -392,23 +392,31 @@
 
     // variable global para el gráfico
     let chartReportes = null;
-    let chartReportes = null;
     let chartSeveridad = null;
 
     // Cuenta cuántos reportes caen en cada categoría (Baja / Media / Alta)
     function contarCategorias(layerGroup, campo, categorias) {
-      const conteo = new Array(categorias.length).fill(0);
-      if (!layerGroup) return conteo;
-    
-      layerGroup.eachLayer(layer => {
-        const props = (layer.feature && layer.feature.properties) || {};
-        const valor = props[campo];
-        const idx = categorias.indexOf(valor);
-        if (idx !== -1) conteo[idx]++;
+    const conteo = new Array(categorias.length).fill(0);
+    if (!layerGroup) return conteo;
+  
+    layerGroup.eachLayer(layer => {
+      const props = (layer.feature && layer.feature.properties) || {};
+      let valor = props[campo];
+  
+      if (!valor) return;
+  
+      valor = String(valor).toLowerCase().trim();
+  
+      categorias.forEach((cat, i) => {
+        if (valor === cat.toLowerCase()) {
+          conteo[i]++;
+        }
       });
-    
-      return conteo;
-      }
+    });
+  
+    return conteo;
+  }
+
 
     // llamada desde map.js cuando las capas comunitarias están cargadas
     function actualizarAnalisis() {
@@ -523,6 +531,7 @@
   </script>
 </body>
 </html>
+
 
 
 
