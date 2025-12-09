@@ -12,5 +12,19 @@
 "features": [
 {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-72.357681, -37.458534, 0.0]}, "properties": {"Fecha y hora del reporte": "2025-12-02T19:15:00.000-03:00", "Tipo de foco": "Humo visible", "Intensidad aparente": "Baja", "Condiciones locales (viento, accesos, etc.)": "poco viento", "_id": 625387176, "_uuid": "6f75123c-af2e-416e-87d9-38a59e014497", "_submission_time": "2025-12-09T00:07:51", "_status": "submitted_via_web", "__version__": "vCjhEF9v7AD9mCUJD6z2FY", "_index": 2}}
 ]
+},
+{
+"type": "FeatureCollection",
+"name": "Foco de incendio",
+"features": [
+{"type": "Feature", "geometry": {"type": "Point", "coordinates": [-72.987052, -36.753908, 0.0]}, "properties": {"Fecha y hora del reporte": "2025-12-04T04:30:00.000-03:00", "Tipo de foco": "Llama visible", "Intensidad aparente": "Alta", "Condiciones locales (viento, accesos, etc.)": "viento sur leve", "_id": 625553077, "_uuid": "c61d1d54-bad5-4e23-b727-7a4203bc1016", "_submission_time": "2025-12-09T07:49:32", "_status": "submitted_via_web", "__version__": "vCjhEF9v7AD9mCUJD6z2FY", "_index": 3}}
+]
+},
+{
+"type": "FeatureCollection",
+"name": "Foco de incendio",
+"features": [
+{"type": "Feature", "geometry": {"type": "Point", "coordinates": [-73.295451, -37.817385, 130.0]}, "properties": {"Fecha y hora del reporte": "2025-10-01T13:12:00.000-03:00", "Tipo de foco": "Llama visible", "Intensidad aparente": "Alta", "_id": 625554695, "_uuid": "38e633d7-5b12-4bf7-9ad5-9dfa5c69f713", "_submission_time": "2025-12-09T07:51:18", "_status": "submitted_via_web", "__version__": "vCjhEF9v7AD9mCUJD6z2FY", "_index": 4}}
+]
 }
 ]
