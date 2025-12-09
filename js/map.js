@@ -291,3 +291,72 @@ legend.onAdd = function (map) {
 
 legend.addTo(map);
 
+// ----------- Gráfico de intensidad / severidad -----------
+
+function intentarConstruirGraficoSeveridad() {
+  if (!chartsReadyFocos || !chartsReadyExt) return;
+
+  const categorias = ['Baja', 'Media', 'Alta'];
+
+  const conteoFocos = contarPorCategoria(
+    focosFeatures,
+    'Intensidad aparente',
+    categorias
+  );
+
+  const conteoExt = contarPorCategoria(
+    extensionesFeatures,
+    'Severidad aparente',
+    categorias
+  );
+
+  const canvas = document.getElementById('grafico-severidad');
+  if (!canvas) return;
+
+  const ctx = canvas.getContext('2d');
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: categorias,
+      datasets: [
+        {
+          label: 'Focos (intensidad)',
+          data: conteoFocos,
+          backgroundColor: 'rgba(227, 26, 28, 0.7)'
+        },
+        {
+          label: 'Extensión (severidad)',
+          data: conteoExt,
+          backgroundColor: 'rgba(255, 127, 0, 0.7)'
+        }
+      ]
+    },
+    options: {
+      responsive: false,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom' }
+      },
+      scales: {
+        y: { beginAtZero: true, ticks: { stepSize: 1 } }
+      }
+    }
+  });
+}
+
+function contarPorCategoria(features, campo, categorias) {
+  const conteo = {};
+  categorias.forEach(c => conteo[c] = 0);
+
+  features.forEach(f => {
+    const props = f.properties || {};
+    const v = props[campo];
+    if (v && conteo[v] !== undefined) conteo[v]++;
+  });
+
+  return categorias.map(c => conteo[c]);
+}
+
+
+
