@@ -397,18 +397,35 @@
   let chartReportes = null;
   let chartSeveridad = null;
 
-  // Cuenta cuantos reportes hay en cada categoría (Baja/Media/Alta)
-  function contarCategorias(layerGroup, campo, categorias) {
+  /**
+   * Devuelve el valor de la primera clave existente en props
+   * por ejemplo: ['Intensidad aparente','intensidad_aparente']
+   */
+  function obtenerValor(props, posiblesCampos) {
+    for (const nombre of posiblesCampos) {
+      if (props.hasOwnProperty(nombre) && props[nombre] != null && props[nombre] !== '') {
+        return props[nombre];
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Cuenta cuántos reportes caen en cada categoría (Baja / Media / Alta)
+   * layerGroup: capa Leaflet (GeoJSON)
+   * posiblesCampos: array de nombres posibles del campo en el GeoJSON
+   * categorias: ['Baja','Media','Alta']
+   */
+  function contarCategorias(layerGroup, posiblesCampos, categorias) {
     const conteo = new Array(categorias.length).fill(0);
     if (!layerGroup) return conteo;
 
     layerGroup.eachLayer(layer => {
       const props = (layer.feature && layer.feature.properties) || {};
-      let valor = props[campo];
+      let valor = obtenerValor(props, posiblesCampos);
 
       if (!valor) return;
 
-      // normalizar: minúscula y sin espacios extremos
       valor = String(valor).toLowerCase().trim();
 
       categorias.forEach((cat, i) => {
@@ -423,7 +440,6 @@
 
   // Llamada desde map.js cuando las capas comunitarias están cargadas
   function actualizarAnalisis() {
-    // asegurar que existen las capas
     if (!window.focosComunidadLayer || !window.poligonosComunidadLayer) return;
 
     const puntos    = focosComunidadLayer.getLayers().length || 0;
@@ -443,7 +459,9 @@
       </table>
     `;
 
+    // -----------------------------
     // Gráfico 1: cantidad de puntos y polígonos
+    // -----------------------------
     const canvasResumen = document.getElementById("grafico-reportes");
     if (!canvasResumen) return;
     const ctx = canvasResumen.getContext("2d");
@@ -481,15 +499,29 @@
     // -----------------------------
     const categorias = ['Baja', 'Media', 'Alta'];
 
+    // Aquí probamos varios nombres posibles de campo
+    const camposIntensidad = [
+      'Intensidad aparente',
+      'intensidad aparente',
+      'intensidad_aparente',
+      'intensidad_aparente_'
+    ];
+
+    const camposSeveridad = [
+      'Severidad aparente',
+      'severidad aparente',
+      'severidad_aparente'
+    ];
+
     const conteoFocos = contarCategorias(
       focosComunidadLayer,
-      'Intensidad aparente',
+      camposIntensidad,
       categorias
     );
 
     const conteoExt = contarCategorias(
       poligonosComunidadLayer,
-      'Severidad aparente',
+      camposSeveridad,
       categorias
     );
 
