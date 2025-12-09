@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>WebGIS Participativo de Incendios Forestales</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Fuente Google -->
+  <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap">
+
+  <!-- Leaflet -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet/dist/leaflet.css"
+  >
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Roboto", Arial, sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: #f0f2f5;
+      color: #222;
+    }
+
+    /* ENCABEZADO SUPERIOR */
+    header {
+      padding: 10px 22px;
+      border-bottom: 1px solid #d0d4dc;
+      background: linear-gradient(90deg, #12263f 0%, #1f3b57 50%, #275c4d 100%);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .header-left,
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .header-brand {
+      align-items: center;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      text-align: center;
+    }
+
+    .header-brand h1 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+    }
+
+    .header-brand h2 {
+      margin: 0;
+      font-size: 12px;
+      font-weight: 300;
+      opacity: 0.9;
+    }
+
+    .logo-item img {
+      height: 58px;
+      max-width: 110px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.5));
+      background: transparent;
+      border-radius: 0;
+      padding: 0;
+    }
+
+    .logo-white {
+      filter: brightness(0) invert(1);
+      height: 48px !important;
+      max-width: 110px !important;
+      object-fit: contain;
+    }
+
+    /* CONTENEDOR PRINCIPAL: SIDEBAR + MAPA */
+    main {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+      padding: 10px 10px 15px 10px;
+      gap: 10px;
+    }
+
+    /* SIDEBAR IZQUIERDO COMO TARJETA */
+    #sidebar {
+      width: 340px;
+      max-width: 35%;
+      background: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+      padding: 14px 14px 10px 14px;
+      overflow-y: auto;
+      border: 1px solid #e1e4eb;
+    }
+
+    #sidebar h2 {
+      font-size: 16px;
+      margin: 0 0 4px 0;
+      font-weight: 600;
+    }
+
+    #sidebar p {
+      margin-top: 0;
+    }
+
+    .sidebar-note {
+      font-size: 11px;
+      color: #666;
+      margin-bottom: 10px;
+    }
+
+    .form-section {
+      border-top: 1px solid #e4e7ee;
+      padding-top: 10px;
+      margin-top: 10px;
+    }
+
+    .form-header {
+      cursor: pointer;
+      font-weight: 500;
+      margin-bottom: 5px;
+      font-size: 14px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-header span {
+      font-weight: 400;
+      font-size: 11px;
+      color: #666;
+      margin-top: 2px;
+    }
+
+    .form-header:hover {
+      color: #0f6cbf;
+    }
+
+    .form-content {
+      display: none;
+      margin-top: 8px;
+    }
+
+    .form-content iframe {
+      width: 100%;
+      height: 420px;
+      border: 1px solid #d5d9e2;
+      border-radius: 6px;
+      background: #fff;
+    }
+
+    .legend {
+      margin-top: 15px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid #e1e4eb;
+      background: #f9fafc;
+      font-size: 11.5px;
+      line-height: 1.4;
+    }
+
+    .legend-title {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .legend ul {
+      padding-left: 18px;
+      margin: 4px 0 6px 0;
+    }
+
+    .legend li {
+      margin-bottom: 2px;
+    }
+
+    .legend-footer {
+      font-size: 10px;
+      color: #777;
+    }
+
+    .analytics-btn {
+      width: 100%;
+      padding: 8px 10px;
+      margin-top: 10px;
+      border: none;
+      background: #1f3b57;
+      color: white;
+      font-size: 13px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .analytics-btn:hover {
+      background: #275c4d;
+    }
+
+    .footer-credit {
+      margin-top: 8px;
+      font-size: 10px;
+      color: #888;
+      text-align: right;
+    }
+
+    /* MAPA A LA DERECHA */
+    #map {
+      flex: 1;
+      height: 100%;
+      width: 100%;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.13);
+      border: 1px solid #d7dbe5;
+    }
+
+    /* RESPONSIVO */
+    @media (max-width: 900px) {
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+
+      main {
+        flex-direction: column;
+      }
+
+      #sidebar {
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        max-height: 50vh;
+      }
+
+      #map {
+        height: 50vh;
+      }
+
+      .header-right {
+        justify-content: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <!-- Logos izquierda -->
+    <div class="header-left">
+      <div class="logo-item">
+        <img src="img/logo_udecc.png" alt="Universidad de Concepción">
+      </div>
+      <div class="logo-item">
+        <a href="https://www.dcgg-udec.cl" target="_blank" rel="noopener">
+          <img src="img/logo_depto.png" alt="Departamento de Geomática" class="logo-white">
+        </a>
+      </div>
+    </div>
+
+    <!-- Título central -->
+    <div class="header-brand">
+      <h1>WebGIS Participativo para Reporte de Incendios Forestales</h1>
+      <h2>Visualización de datos oficiales y reportes comunitarios georreferenciados</h2>
+    </div>
+
+    <!-- Logo derecha -->
+    <div class="header-right">
+      <div class="logo-item">
+        <a href="https://www.conaf.cl/" target="_blank" rel="noopener">
+          <img src="img/logo_conaf.png" alt="CONAF">
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- PANEL LATERAL IZQUIERDO -->
+    <aside id="sidebar">
+      <h2>Reportes de la comunidad</h2>
+      <p class="sidebar-note">
+        Selecciona un formulario para registrar un <strong>foco puntual</strong> o la
+        <strong>extensión</strong> del incendio. Los datos se integran al visor tras su procesamiento.
+      </p>
+
+      <!-- FORMULARIO FOCO -->
+      <div class="form-section">
+        <div class="form-header" onclick="toggleForm('foco')">
+          Foco de incendio
+          <span>Registrar un punto georreferenciado con foto y descripción</span>
+        </div>
+        <div id="form-foco" class="form-content">
+          <iframe src="https://ee.kobotoolbox.org/x/aehCFvy5"></iframe>
+        </div>
+      </div>
+
+      <!-- FORMULARIO EXTENSIÓN -->
+      <div class="form-section">
+        <div class="form-header" onclick="toggleForm('extension')">
+          Extensión del incendio
+          <span>Delimitar de forma aproximada el área afectada</span>
+        </div>
+        <div id="form-extension" class="form-content">
+          <iframe src="https://ee.kobotoolbox.org/x/h6jhTVre"></iframe>
+        </div>
+      </div>
+
+      <!-- LEYENDA / INFO EXTRA -->
+      <div class="legend">
+        <div class="legend-title">Leyenda principal</div>
+        <ul>
+          <li><strong>Puntos rojos:</strong> focos reportados por la comunidad</li>
+          <li><strong>Polígonos naranjos:</strong> extensión reportada</li>
+          <li><strong>Red vial / límites / centros poblados:</strong> datos oficiales</li>
+        </ul>
+        <div class="legend-footer">
+          Los reportes comunitarios son aproximados y deben interpretarse como información de apoyo.
+        </div>
+      </div>
+
+      <!-- BOTÓN DE ANÁLISIS -->
+      <button class="analytics-btn" onclick="toggleAnalytics()">Ver análisis de reportes</button>
+
+      <!-- PANEL DE TABLA + GRÁFICO -->
+      <div id="analytics-panel" style="display:none; margin-top:10px;">
+        <h3 style="font-size:14px; margin:0 0 6px;">Resumen de datos</h3>
+        <div id="tabla-reportes" style="font-size:12px;"></div>
+        <canvas id="grafico-reportes" width="280" height="180"></canvas>
+      </div>
+
+      <div class="footer-credit">
+        Desarrollo académico – Departamento de Geomática / Ciencias Geodésicas
+      </div>
+    </aside>
+
+    <!-- MAPA LEAFLET -->
+    <section id="map"></section>
+  </main>
+
+  <!-- JS Leaflet -->
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <!-- Script de lógica del visor -->
+  <script src="js/map.js"></script>
+
+  <!-- Chart.js para gráfico -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Funciones de UI (formularios + análisis) -->
+  <script>
+    function toggleForm(tipo) {
+      const focoDiv = document.getElementById('form-foco');
+      const extDiv  = document.getElementById('form-extension');
+
+      if (tipo === 'foco') {
+        const visible = (focoDiv.style.display === 'block');
+        focoDiv.style.display = visible ? 'none' : 'block';
+        extDiv.style.display = 'none';
+      } else {
+        const visible = (extDiv.style.display === 'block');
+        extDiv.style.display = visible ? 'none' : 'block';
+        focoDiv.style.display = 'none';
+      }
+    }
+
+    function toggleAnalytics() {
+      const panel = document.getElementById("analytics-panel");
+      panel.style.display = (panel.style.display === "none" || panel.style.display === "") ? "block" : "none";
+    }
+
+    // variable global para el gráfico
+    let chartReportes = null;
+
+    // llamada desde map.js cuando las capas comunitarias están cargadas
+    function actualizarAnalisis() {
+      if (!window.focosComunidadLayer || !window.poligonosComunidadLayer) return;
+
+      const puntos = focosComunidadLayer.getLayers().length || 0;
+      const poligonos = poligonosComunidadLayer.getLayers().length || 0;
+
+      // Tabla
+      document.getElementById("tabla-reportes").innerHTML = `
+        <table style="width:100%; border-collapse:collapse;">
+          <tr>
+            <td>Puntos reportados:</td>
+            <td style="text-align:right;"><b>${puntos}</b></td>
+          </tr>
+          <tr>
+            <td>Polígonos reportados:</td>
+            <td style="text-align:right;"><b>${poligonos}</b></td>
+          </tr>
+        </table>
+      `;
+
+      const ctx = document.getElementById("grafico-reportes").getContext("2d");
+
+      if (chartReportes) {
+        chartReportes.destroy();
+      }
+
+      chartReportes = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Puntos', 'Polígonos'],
+          datasets: [{
+            label: 'Cantidad',
+            data: [puntos, poligonos],
+            backgroundColor: ['#e31a1c', '#ff7f00']
+          }]
+        },
+        options: {
+          responsive: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { precision: 0 }
+            }
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>
