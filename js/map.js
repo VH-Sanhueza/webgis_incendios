@@ -95,6 +95,12 @@ var hidrografiaLayer;
 var centrosLayer;
 var focosComunidadLayer;
 var poligonosComunidadLayer;
+// Datos para análisis avanzado
+let focosFeatures = [];
+let extensionesFeatures = [];
+let chartsReadyFocos = false;
+let chartsReadyExt = false;
+
 
 // 5. Control de capas
 let layersLoaded = 0;
@@ -223,6 +229,10 @@ fetch('data/reportes_focos.geojson')
         popupReporteComunidad(feature, layer, 'foco');
       }
     }).addTo(map);
+    // guardar features para análisis
+    focosFeatures = data.features || [];
+    chartsReadyFocos = true;
+    intentarConstruirGraficoSeveridad();
 
     overlayMaps['Focos reportados por la comunidad'] = focosComunidadLayer;
     layersLoaded++;
@@ -244,6 +254,10 @@ fetch('data/reportes_poligonos.geojson')
         popupReporteComunidad(feature, layer, 'extensión');
       }
     }).addTo(map);
+    // guardar features para análisis
+    extensionesFeatures = data.features || [];
+    chartsReadyExt = true;
+    intentarConstruirGraficoSeveridad();
 
     overlayMaps['Extensión reportada por la comunidad'] = poligonosComunidadLayer;
     layersLoaded++;
@@ -276,3 +290,4 @@ legend.onAdd = function (map) {
 };
 
 legend.addTo(map);
+
