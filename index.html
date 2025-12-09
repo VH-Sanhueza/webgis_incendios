@@ -370,169 +370,167 @@
 
   <!-- Funciones de UI (formularios + análisis) -->
   <script>
-    function toggleForm(tipo) {
-      const focoDiv = document.getElementById('form-foco');
-      const extDiv  = document.getElementById('form-extension');
+  // Mostrar / ocultar formularios Kobo
+  function toggleForm(tipo) {
+    const focoDiv = document.getElementById('form-foco');
+    const extDiv  = document.getElementById('form-extension');
 
-      if (tipo === 'foco') {
-        const visible = (focoDiv.style.display === 'block');
-        focoDiv.style.display = visible ? 'none' : 'block';
-        extDiv.style.display = 'none';
-      } else {
-        const visible = (extDiv.style.display === 'block');
-        extDiv.style.display = visible ? 'none' : 'block';
-        focoDiv.style.display = 'none';
-      }
+    if (tipo === 'foco') {
+      const visible = (focoDiv.style.display === 'block');
+      focoDiv.style.display = visible ? 'none' : 'block';
+      extDiv.style.display = 'none';
+    } else {
+      const visible = (extDiv.style.display === 'block');
+      extDiv.style.display = visible ? 'none' : 'block';
+      focoDiv.style.display = 'none';
     }
+  }
 
-    function toggleAnalytics() {
-      const panel = document.getElementById("analytics-panel");
-      panel.style.display = (panel.style.display === "none" || panel.style.display === "") ? "block" : "none";
-    }
+  // Mostrar / ocultar panel de análisis
+  function toggleAnalytics() {
+    const panel = document.getElementById('analytics-panel');
+    if (!panel) return;
+    panel.style.display = (panel.style.display === 'block') ? 'none' : 'block';
+  }
 
-    // variable global para el gráfico
-    let chartReportes = null;
-    let chartSeveridad = null;
+  // Gráficos de Chart.js
+  let chartReportes = null;
+  let chartSeveridad = null;
 
-    // Cuenta cuántos reportes caen en cada categoría (Baja / Media / Alta)
-    function contarCategorias(layerGroup, campo, categorias) {
+  // Cuenta cuantos reportes hay en cada categoría (Baja/Media/Alta)
+  function contarCategorias(layerGroup, campo, categorias) {
     const conteo = new Array(categorias.length).fill(0);
     if (!layerGroup) return conteo;
-  
+
     layerGroup.eachLayer(layer => {
       const props = (layer.feature && layer.feature.properties) || {};
       let valor = props[campo];
-  
+
       if (!valor) return;
-  
+
+      // normalizar: minúscula y sin espacios extremos
       valor = String(valor).toLowerCase().trim();
-  
+
       categorias.forEach((cat, i) => {
         if (valor === cat.toLowerCase()) {
           conteo[i]++;
         }
       });
     });
-  
+
     return conteo;
   }
 
+  // Llamada desde map.js cuando las capas comunitarias están cargadas
+  function actualizarAnalisis() {
+    // asegurar que existen las capas
+    if (!window.focosComunidadLayer || !window.poligonosComunidadLayer) return;
 
-    // llamada desde map.js cuando las capas comunitarias están cargadas
-    function actualizarAnalisis() {
-      if (!window.focosComunidadLayer || !window.poligonosComunidadLayer) return;
+    const puntos    = focosComunidadLayer.getLayers().length || 0;
+    const poligonos = poligonosComunidadLayer.getLayers().length || 0;
 
-      const puntos = focosComunidadLayer.getLayers().length || 0;
-      const poligonos = poligonosComunidadLayer.getLayers().length || 0;
+    // Tabla resumen
+    document.getElementById("tabla-reportes").innerHTML = `
+      <table style="width:100%; border-collapse:collapse;">
+        <tr>
+          <td>Puntos reportados:</td>
+          <td style="text-align:right;"><b>${puntos}</b></td>
+        </tr>
+        <tr>
+          <td>Polígonos reportados:</td>
+          <td style="text-align:right;"><b>${poligonos}</b></td>
+        </tr>
+      </table>
+    `;
 
-      // Tabla
-      document.getElementById("tabla-reportes").innerHTML = `
-        <table style="width:100%; border-collapse:collapse;">
-          <tr>
-            <td>Puntos reportados:</td>
-            <td style="text-align:right;"><b>${puntos}</b></td>
-          </tr>
-          <tr>
-            <td>Polígonos reportados:</td>
-            <td style="text-align:right;"><b>${poligonos}</b></td>
-          </tr>
-        </table>
-      `;
+    // Gráfico 1: cantidad de puntos y polígonos
+    const canvasResumen = document.getElementById("grafico-reportes");
+    if (!canvasResumen) return;
+    const ctx = canvasResumen.getContext("2d");
 
-      const ctx = document.getElementById("grafico-reportes").getContext("2d");
+    if (chartReportes) {
+      chartReportes.destroy();
+    }
 
-      if (chartReportes) {
-        chartReportes.destroy();
-      }
-
-      chartReportes = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: ['Puntos', 'Polígonos'],
-          datasets: [{
-            label: 'Cantidad',
-            data: [puntos, poligonos],
-            backgroundColor: ['#e31a1c', '#ff7f00']
-          }]
+    chartReportes = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['Puntos', 'Polígonos'],
+        datasets: [{
+          label: 'Cantidad',
+          data: [puntos, poligonos],
+          backgroundColor: ['#e31a1c', '#ff7f00']
+        }]
+      },
+      options: {
+        responsive: false,
+        plugins: {
+          legend: { display: false }
         },
-        options: {
-          responsive: false,
-          plugins: {
-            legend: { display: false }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              ticks: { precision: 0 }
-            }
-           // -----------------------------
-          // Gráfico de intensidad / severidad
-          // -----------------------------
-          const categorias = ['Baja', 'Media', 'Alta'];
-          
-          // Cargar categorías desde los GeoJSON  
-          const conteoFocos = contarCategorias(
-              focosComunidadLayer,
-              'Intensidad aparente',
-              categorias
-          );
-          
-          const conteoExt = contarCategorias(
-              poligonosComunidadLayer,
-              'Severidad aparente',
-              categorias
-          );
-          
-          const canvasSev = document.getElementById("grafico-severidad");
-          if (!canvasSev) return;
-          
-          const ctxSev = canvasSev.getContext("2d");
-          
-          // destruir si ya existe
-          if (chartSeveridad) {
-              chartSeveridad.destroy();
-          }
-          
-          chartSeveridad = new Chart(ctxSev, {
-              type: 'bar',
-              data: {
-                  labels: categorias,
-                  datasets: [
-                      {
-                          label: 'Focos (intensidad)',
-                          data: conteoFocos,
-                          backgroundColor: 'rgba(227, 26, 28, 0.7)'
-                      },
-                      {
-                          label: 'Extensión (severidad)',
-                          data: conteoExt,
-                          backgroundColor: 'rgba(255, 127, 0, 0.7)'
-                      }
-                  ]
-              },
-              options: {
-                  responsive: false,
-                  plugins: {
-                      legend: { position: 'bottom' }
-                  },
-                  scales: {
-                      y: {
-                          beginAtZero: true,
-                          ticks: { precision: 0 }
-                      }
-                  }
-              }
-          });
- 
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { precision: 0 }
           }
         }
-      });
+      }
+    });
+
+    // -----------------------------
+    // Gráfico 2: intensidad / severidad
+    // -----------------------------
+    const categorias = ['Baja', 'Media', 'Alta'];
+
+    const conteoFocos = contarCategorias(
+      focosComunidadLayer,
+      'Intensidad aparente',
+      categorias
+    );
+
+    const conteoExt = contarCategorias(
+      poligonosComunidadLayer,
+      'Severidad aparente',
+      categorias
+    );
+
+    const canvasSev = document.getElementById("grafico-severidad");
+    if (!canvasSev) return;
+
+    const ctxSev = canvasSev.getContext("2d");
+
+    if (chartSeveridad) {
+      chartSeveridad.destroy();
     }
-  </script>
-</body>
-</html>
 
-
-
-
-
+    chartSeveridad = new Chart(ctxSev, {
+      type: 'bar',
+      data: {
+        labels: categorias,
+        datasets: [
+          {
+            label: 'Focos (intensidad)',
+            data: conteoFocos,
+            backgroundColor: 'rgba(227, 26, 28, 0.7)'
+          },
+          {
+            label: 'Extensión (severidad)',
+            data: conteoExt,
+            backgroundColor: 'rgba(255, 127, 0, 0.7)'
+          }
+        ]
+      },
+      options: {
+        responsive: false,
+        plugins: {
+          legend: { position: 'bottom' }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { precision: 0 }
+          }
+        }
+      }
+    });
+  }
+</script>
